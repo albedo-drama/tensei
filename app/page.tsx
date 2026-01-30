@@ -10,57 +10,55 @@ const cleanData = (arr: any[]) => {
   return arr.filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i);
 };
 
-// FORMAT LABEL BARU: Hapus "Sub" yang tidak berguna
+// LOGIKA LABEL EPISODE (DIPERBAIKI UNTUK JSON /HOME)
 const formatLabel = (item: any) => {
-  if (item.episode && item.episode.toLowerCase().includes('episode')) {
+  // Prioritas utama: Data Episode (misal: "Ep 13 (End)")
+  if (item.episode && item.episode.trim() !== '') {
     return item.episode.replace('Episode', 'Ep').replace('Subtitle Indonesia', '').trim();
   }
-  // Kalau isinya cuma "Sub" atau kosong, mending tampilkan status atau type
-  if (item.status && item.status !== 'Sub') return item.status;
-  return item.type || 'TV'; 
+  // Fallback ke Status
+  return item.status || 'Baru';
 };
 
 // --- COMPONENTS: LOADING ---
-const SuperLoader = ({ text = "Memanggil Waifu..." }) => {
+const SuperLoader = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] animate-fade-in">
-      <div className="relative w-16 h-16 mb-4">
+      <div className="relative w-12 h-12 mb-4">
         <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
         <div className="absolute inset-0 border-4 border-t-blue-500 border-r-purple-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
       </div>
-      <p className="text-xs font-bold text-slate-400 animate-pulse tracking-widest uppercase">{text}</p>
     </div>
   );
 };
 
-// --- ICONS ---
+// --- ICONS (SVG) ---
 const Icons = {
   Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   Search: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Fav: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>,
   Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
   Ongoing: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Movie: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" /></svg>,
-  Complete: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Play: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
 };
 
 export default function AnimeApp() {
-  const [view, setView] = useState<'home' | 'ongoing' | 'completed' | 'movie' | 'genres' | 'genre_result' | 'search' | 'favorites' | 'detail' | 'watch'>('home');
+  const [view, setView] = useState<'home' | 'ongoing' | 'genres' | 'genre_result' | 'search' | 'favorites' | 'detail' | 'watch'>('home');
   const [loading, setLoading] = useState(false);
+  
   const [listData, setListData] = useState<any[]>([]);
   const [animeDetail, setAnimeDetail] = useState<any>(null);
   const [watchData, setWatchData] = useState<any>(null);
   const [streamData, setStreamData] = useState<any>(null);
   const [genres, setGenres] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
+  
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState({ name: '', slug: '' });
   const [nativeSrc, setNativeSrc] = useState('');
   const [playerMode, setPlayerMode] = useState<'iframe' | 'native'>('native');
-  const [playerLoading, setPlayerLoading] = useState(false); // New state for player switching
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -96,8 +94,7 @@ export default function AnimeApp() {
     setWatchData(null);
     setStreamData(null);
     setNativeSrc('');
-    setPlayerMode('native');
-    setPlayerLoading(true); // Mulai loading player
+    setPlayerMode('native'); 
     
     try {
       const resWatch = await fetch(`${API_BASE}/watch/${slug}`);
@@ -110,17 +107,12 @@ export default function AnimeApp() {
       if (jsonStream.code === 0 && jsonStream.data?.length > 0) {
         setStreamData(jsonStream.data);
         setNativeSrc(jsonStream.data[0].url);
-        setPlayerMode('native'); // Sukses Native
       } else {
-        // AUTO SWITCH: Jika native gagal, langsung ke iframe tanpa tanya user
-        console.log("Stream native kosong, switch ke iframe...");
-        setPlayerMode('iframe'); 
+        setPlayerMode('iframe');
       }
     } catch (e) { 
-        console.error(e);
-        setPlayerMode('iframe'); // Error pun langsung switch
+        setPlayerMode('iframe'); 
     }
-    setPlayerLoading(false);
   };
 
   const toggleFav = () => {
@@ -129,7 +121,6 @@ export default function AnimeApp() {
     const newFav = exists 
       ? favorites.filter(f => f.title !== animeDetail.title)
       : [{ title: animeDetail.title, img: animeDetail.img, slug: `detail/${animeDetail.title.toLowerCase().replace(/ /g, '-')}` }, ...favorites];
-    
     setFavorites(newFav);
     localStorage.setItem('favorites', JSON.stringify(newFav));
   };
@@ -142,10 +133,9 @@ export default function AnimeApp() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (view === 'home') fetchList(`/anime?page=${page}&order=update`);
+    // KEMBALI MENGGUNAKAN /HOME AGAR EPISODE MUNCUL
+    if (view === 'home') fetchList(`/home?page=${page}`);
     if (view === 'ongoing') fetchList(`/ongoing?page=${page}`);
-    if (view === 'completed') fetchList(`/anime?status=Completed&page=${page}&order=update`);
-    if (view === 'movie') fetchList(`/anime?type=Movie&page=${page}&order=update`);
     if (view === 'search' && searchQuery) fetchList(`/search?q=${searchQuery}`);
     if (view === 'genre_result') fetchList(`/anime?genre=${selectedGenre.slug}&page=${page}&order=update`);
   }, [view, page, selectedGenre]);
@@ -164,24 +154,19 @@ export default function AnimeApp() {
   );
 
   const BottomNav = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a] border-t border-slate-800 pb-safe z-50 flex items-center h-16 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar">
-      <div className="flex w-full justify-between min-w-[360px] px-2">
-        <button onClick={() => { setView('home'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'home' ? 'text-blue-500' : 'text-slate-500'}`}>
-          <Icons.Home /> <span className="text-[10px] font-bold">Home</span>
-        </button>
-        <button onClick={() => { setView('ongoing'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'ongoing' ? 'text-blue-500' : 'text-slate-500'}`}>
-          <Icons.Ongoing /> <span className="text-[10px] font-bold">Ongoing</span>
-        </button>
-        <button onClick={() => { setView('completed'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'completed' ? 'text-blue-500' : 'text-slate-500'}`}>
-          <Icons.Complete /> <span className="text-[10px] font-bold">Tamat</span>
-        </button>
-        <button onClick={() => { setView('movie'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'movie' ? 'text-blue-500' : 'text-slate-500'}`}>
-          <Icons.Movie /> <span className="text-[10px] font-bold">Movie</span>
-        </button>
-        <button onClick={() => setView('genres')} className={`flex flex-col items-center gap-1 min-w-[60px] ${(view === 'genres' || view === 'genre_result') ? 'text-blue-500' : 'text-slate-500'}`}>
-          <Icons.Genre /> <span className="text-[10px] font-bold">Genre</span>
-        </button>
-      </div>
+    <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a] border-t border-slate-800 pb-safe z-50 flex justify-around items-center h-16 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
+      <button onClick={() => { setView('home'); setPage(1); }} className={`flex flex-col items-center gap-1 ${view === 'home' ? 'text-blue-500' : 'text-slate-500'}`}>
+        <Icons.Home /> <span className="text-[10px] font-bold">Home</span>
+      </button>
+      <button onClick={() => { setView('ongoing'); setPage(1); }} className={`flex flex-col items-center gap-1 ${view === 'ongoing' ? 'text-blue-500' : 'text-slate-500'}`}>
+        <Icons.Ongoing /> <span className="text-[10px] font-bold">Ongoing</span>
+      </button>
+      <button onClick={() => setView('genres')} className={`flex flex-col items-center gap-1 ${(view === 'genres' || view === 'genre_result') ? 'text-blue-500' : 'text-slate-500'}`}>
+        <Icons.Genre /> <span className="text-[10px] font-bold">Genre</span>
+      </button>
+      <button onClick={() => setView('favorites')} className={`flex flex-col items-center gap-1 ${view === 'favorites' ? 'text-blue-500' : 'text-slate-500'}`}>
+        <Icons.Fav /> <span className="text-[10px] font-bold">Favorit</span>
+      </button>
     </div>
   );
 
@@ -218,7 +203,7 @@ export default function AnimeApp() {
               </div>
             )}
 
-            {(['home', 'ongoing', 'completed', 'movie', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
+            {(['home', 'ongoing', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
               <>
                 {view === 'home' && !searchQuery && page === 1 && listData.length > 0 && (
                   <div className="mb-8">
@@ -241,7 +226,7 @@ export default function AnimeApp() {
                 <div className="flex justify-between items-center mb-4 px-1">
                    <h2 className="font-bold text-lg text-slate-200 flex items-center gap-2">
                      {view === 'genre_result' && <button onClick={()=>setView('genres')}><Icons.Back /></button>}
-                     {view === 'home' ? 'Update Terbaru' : view === 'ongoing' ? 'Sedang Tayang' : view === 'completed' ? 'Anime Tamat' : view === 'movie' ? 'Film Anime' : view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 'Hasil Pencarian'}
+                     {view === 'home' ? 'Update Terbaru' : view === 'ongoing' ? 'Sedang Tayang' : view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 'Hasil Pencarian'}
                    </h2>
                    {listData.length > 0 && <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">Page {page}</div>}
                 </div>
@@ -255,12 +240,14 @@ export default function AnimeApp() {
                         <div className="aspect-[3/4] relative">
                           <img src={item.img} className="w-full h-full object-cover" loading="lazy" />
                           <div className="absolute bottom-2 right-2">
+                            {/* FIX: LABEL EPISODE MUNCUL DI SINI */}
                             <span className="text-[10px] font-bold bg-black/60 text-white px-2 py-0.5 rounded backdrop-blur border border-white/10 block truncate">
                               {formatLabel(item)}
                             </span>
                           </div>
                         </div>
-                        <div className="p-3 bg-slate-900 h-[4.5rem] flex items-center">
+                        {/* FIX: JUDUL TIDAK KEPOTONG (Padding Bawah Ditambah) */}
+                        <div className="p-3 bg-slate-900 h-[5rem] flex items-start pt-3">
                           <h3 className="text-xs font-bold leading-snug line-clamp-2 text-white group-hover:text-blue-400 transition-colors">
                             {item.title}
                           </h3>
@@ -301,11 +288,13 @@ export default function AnimeApp() {
                    <img src={animeDetail.img} className="w-full h-full object-cover opacity-30 blur-md scale-110" />
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#020617]"></div>
                    <button onClick={() => setView('home')} className="absolute top-4 left-4 bg-black/40 p-2 rounded-full backdrop-blur text-white z-10"><Icons.Back /></button>
+                   
                    <div className="absolute -bottom-10 left-4 right-4 flex gap-4 items-end z-20">
                       <img src={animeDetail.img} className="w-28 rounded-lg shadow-2xl border-2 border-slate-700 bg-slate-800" />
                       <div className="flex-1 pb-1">
                          <h1 className="text-lg font-black leading-tight line-clamp-3 mb-2 text-white shadow-black drop-shadow-md">{animeDetail.title}</h1>
                          <div className="flex flex-wrap gap-2 text-[10px] font-bold text-slate-300">
+                            {/* RATING MUNCUL DISINI */}
                             <span className="bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">★ {animeDetail.rating || '-'}</span>
                             <span className="bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">{animeDetail.status}</span>
                          </div>
@@ -327,11 +316,17 @@ export default function AnimeApp() {
                    <h3 className="font-bold text-xs text-slate-500 uppercase mb-2">Genre</h3>
                    <div className="flex flex-wrap gap-2 mb-4">
                       {animeDetail.genres && animeDetail.genres.length > 0 ? (
-                        animeDetail.genres.map((g:string) => <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>)
-                      ) : <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>}
+                        animeDetail.genres.map((g:string) => (
+                          <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>
+                      )}
                    </div>
                    <h3 className="font-bold text-xs text-slate-500 uppercase mb-1">Sinopsis</h3>
-                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">{animeDetail.synopsis || "Sinopsis belum tersedia."}</p>
+                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">
+                     {animeDetail.synopsis ? animeDetail.synopsis : "Sinopsis belum tersedia untuk anime ini."}
+                   </p>
                 </div>
 
                 <div className="px-1">
@@ -357,17 +352,13 @@ export default function AnimeApp() {
                  </div>
 
                  <div className="flex-1 flex items-center justify-center bg-black relative">
-                    {playerLoading ? (
-                       <SuperLoader text="Memuat Video..." />
-                    ) : playerMode === 'native' && streamData ? (
+                    {playerMode === 'native' && streamData ? (
                        <video ref={videoRef} src={nativeSrc || streamData[0].url} controls autoPlay playsInline className="w-full max-h-screen aspect-video shadow-2xl" poster={watchData?.title ? undefined : animeDetail?.img} />
                     ) : playerMode === 'iframe' && watchData?.servers ? (
                         <iframe src={watchData.servers[0].embed} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media"></iframe>
                     ) : (
-                       <div className="text-center p-8 space-y-4 max-w-sm bg-[#1e293b] rounded-2xl border border-slate-700 mx-4">
-                          <h3 className="text-white font-bold">Video Tidak Tersedia</h3>
-                          <p className="text-slate-400 text-xs">Maaf, sumber video untuk episode ini sedang bermasalah.</p>
-                       </div>
+                       // ERROR SCREEN DIHILANGKAN, GANTI JADI LOADING BIASA
+                       <div className="text-center text-slate-500 text-xs">Memuat video...</div>
                     )}
                  </div>
 
