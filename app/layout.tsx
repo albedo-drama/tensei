@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AnimeStream - Nonton Anime Gratis",
-  description: "Streaming Anime Subtitle Indonesia Terlengkap",
+  title: "ALBEDOWIBU-TV",
+  description: "Tempat Nonton Anime Paling Wangi",
 };
 
 export default function RootLayout({
