@@ -84,7 +84,7 @@ export default function AnimeApp() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (view === 'home') fetchList(`/home?page=${page}`);
-    if (view === 'ongoing') fetchList(`/ongoing?page=${page}`); // API ongoing kadang page statis, tapi kita pasang
+    if (view === 'ongoing') fetchList(`/ongoing?page=${page}`); 
     if (view === 'explore') {
       const p = new URLSearchParams();
       p.append('page', page.toString());
@@ -110,9 +110,9 @@ export default function AnimeApp() {
       <nav className="sticky top-0 z-50 bg-[#1e293b]/95 backdrop-blur border-b border-slate-700 shadow-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-8">
-            <h1 className="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 cursor-pointer"
+            <h1 className="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 cursor-pointer tracking-tighter"
                 onClick={() => { setView('home'); setPage(1); }}>
-              ANIMESTREAM
+              ALBEDOWIBU-TV
             </h1>
             <div className="hidden md:flex gap-1 bg-slate-800/50 p-1 rounded-lg">
               {['home', 'ongoing', 'explore'].map(v => (
@@ -124,7 +124,7 @@ export default function AnimeApp() {
             </div>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); setView('explore'); fetchList(`/search?q=${searchQuery}`); }} className="relative w-full max-w-xs">
-             <input type="text" placeholder="Cari..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+             <input type="text" placeholder="Cari waifu..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700 rounded-full pl-4 pr-10 py-2 text-sm focus:outline-none focus:border-blue-500" />
              <button type="submit" className="absolute right-3 top-2.5 text-slate-500 hover:text-white">🔍</button>
           </form>
@@ -154,7 +154,7 @@ export default function AnimeApp() {
         {loading ? (
           <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
             <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-slate-500 text-sm animate-pulse">Sedang memuat data...</p>
+            <p className="text-slate-500 text-sm animate-pulse">Sabar ya, lagi loading...</p>
           </div>
         ) : (
           <>
@@ -193,7 +193,7 @@ export default function AnimeApp() {
                   <div className="space-y-4">
                     <img src={animeDetail.img} className="w-full rounded-xl shadow-2xl border border-slate-800" />
                     <button onClick={() => animeDetail.episodes?.[0] && loadWatch(animeDetail.episodes[0].slug)} 
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-blue-500/30 transition-all text-white">
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-blue-500/30 transition-all text-white">
                       ▶ Mulai Nonton
                     </button>
                   </div>
@@ -322,7 +322,7 @@ export default function AnimeApp() {
       </main>
 
       <footer className="mt-auto py-8 text-center text-slate-600 text-sm bg-[#0f172a] border-t border-slate-800">
-        <p>&copy; 2026 Dramabos App. All rights reserved.</p>
+        <p>&copy; 2026 ALBEDOWIBU-TV • Wibu gak harus bau</p>
       </footer>
     </div>
   );
