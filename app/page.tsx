@@ -10,6 +10,41 @@ const cleanData = (arr: any[]) => {
   return arr.filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i);
 };
 
+const formatLabel = (item: any) => {
+  if (item.episode) {
+    // Ubah "Episode 12" jadi "Ep 12" biar singkat
+    return item.episode.replace('Episode', 'Ep').replace('Subtitle Indonesia', '').trim();
+  }
+  return item.status || 'Sub Indo';
+};
+
+// --- COMPONENTS: LOADING KEREN ---
+const SuperLoader = () => {
+  const [text, setText] = useState("Memanggil Waifu...");
+  useEffect(() => {
+    const texts = ["Memanggil Waifu...", "Menyiapkan Isekai...", "Loading Anime...", "Sabar ya..."];
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % texts.length;
+      setText(texts[i]);
+    }, 800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+      <div className="relative w-20 h-20 mb-6">
+        <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-t-blue-500 border-r-purple-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+           <span className="text-2xl">⚡</span>
+        </div>
+      </div>
+      <p className="text-sm font-bold text-slate-400 animate-pulse tracking-widest uppercase">{text}</p>
+    </div>
+  );
+};
+
 // --- ICONS (SVG) ---
 const Icons = {
   Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
@@ -17,7 +52,8 @@ const Icons = {
   Search: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Fav: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>,
   Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
-  Ongoing: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  Ongoing: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Play: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
 };
 
 export default function AnimeApp() {
@@ -40,6 +76,7 @@ export default function AnimeApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState({ name: '', slug: '' });
   const [nativeSrc, setNativeSrc] = useState('');
+  const [playerMode, setPlayerMode] = useState<'iframe' | 'native'>('iframe');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // --- INIT ---
@@ -47,7 +84,7 @@ export default function AnimeApp() {
     const savedFav = localStorage.getItem('favorites');
     if (savedFav) setFavorites(JSON.parse(savedFav));
     
-    // Fetch Genres Awal
+    // Fetch Genres
     fetch(`${API_BASE}/genres`).then(r => r.json()).then(j => setGenres(j.data)).catch(console.error);
   }, []);
 
@@ -79,6 +116,7 @@ export default function AnimeApp() {
     setWatchData(null);
     setStreamData(null);
     setNativeSrc('');
+    setPlayerMode('native'); 
     
     try {
       const resWatch = await fetch(`${API_BASE}/watch/${slug}`);
@@ -112,22 +150,16 @@ export default function AnimeApp() {
     setView('genre_result');
   };
 
-  // --- EFFECTS (ROUTER LOGIC) ---
+  // --- EFFECTS ---
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    // PERBAIKAN LOGIC PAGINATION DI SINI
-    if (view === 'home') {
-      // Kita pakai /anime?order=update sebagai pengganti /home agar pagination jalan
-      fetchList(`/anime?page=${page}&order=update`);
-    }
+    if (view === 'home') fetchList(`/anime?page=${page}&order=update`);
     if (view === 'ongoing') fetchList(`/ongoing?page=${page}`);
     if (view === 'search' && searchQuery) fetchList(`/search?q=${searchQuery}`);
     if (view === 'genre_result') fetchList(`/anime?genre=${selectedGenre.slug}&page=${page}&order=update`);
-    
   }, [view, page, selectedGenre]);
 
-  // --- RENDER HELPERS ---
+  // --- HEADER COMPONENT ---
   const MobileHeader = () => (
     <div className="fixed top-0 left-0 right-0 h-14 bg-[#0f172a]/95 backdrop-blur z-40 flex items-center justify-between px-4 border-b border-slate-800 shadow-md">
        <h1 className="text-lg font-black italic bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -141,6 +173,7 @@ export default function AnimeApp() {
     </div>
   );
 
+  // --- BOTTOM NAV COMPONENT ---
   const BottomNav = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a] border-t border-slate-800 pb-safe z-50 flex justify-around items-center h-16 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
       <button onClick={() => { setView('home'); setPage(1); }} className={`flex flex-col items-center gap-1 ${view === 'home' ? 'text-blue-500' : 'text-slate-500'}`}>
@@ -162,7 +195,7 @@ export default function AnimeApp() {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans pb-20 pt-16 selection:bg-blue-500 selection:text-white">
       <MobileHeader />
 
-      {/* SEARCH VIEW */}
+      {/* SEARCH INPUT */}
       {view === 'search' && (
         <div className="container mx-auto px-4 mb-4">
           <form onSubmit={(e) => { e.preventDefault(); fetchList(`/search?q=${searchQuery}`); }} className="relative">
@@ -173,12 +206,10 @@ export default function AnimeApp() {
         </div>
       )}
 
-      {/* CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <main className="container mx-auto px-3">
         {loading ? (
-          <div className="grid grid-cols-2 gap-3 animate-pulse">
-            {[...Array(6)].map((_,i) => <div key={i} className="aspect-[3/4] bg-slate-800 rounded-xl"></div>)}
-          </div>
+          <SuperLoader />
         ) : (
           <>
             {/* VIEW: GENRE MENU */}
@@ -199,69 +230,69 @@ export default function AnimeApp() {
             {/* VIEW: LIST (Home, Ongoing, Search, Genre Result) */}
             {(['home', 'ongoing', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
               <>
-                {/* HERO BANNER (Hanya muncul di Page 1 Home) */}
+                {/* HERO BANNER - JUDUL DI ATAS GAMBAR SEKARANG */}
                 {view === 'home' && !searchQuery && page === 1 && listData.length > 0 && (
-                   <div onClick={() => loadDetail(listData[0].slug)} className="mb-6 relative rounded-2xl overflow-hidden aspect-video shadow-lg border border-slate-800 active:scale-95 transition-transform">
-                      <img src={listData[0].img} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                      <div className="absolute bottom-4 left-4 right-4">
-                         <div className="flex gap-2 mb-2">
-                            <span className="bg-red-600 text-[10px] font-bold px-2 py-0.5 rounded text-white shadow">HOT</span>
-                            <span className="bg-blue-600 text-[10px] font-bold px-2 py-0.5 rounded text-white shadow">
-                              {listData[0].episode || listData[0].status || 'Ongoing'}
-                            </span>
-                         </div>
-                         <h2 className="text-lg font-black leading-tight text-white drop-shadow-md line-clamp-2">{listData[0].title}</h2>
-                      </div>
-                   </div>
+                  <div className="mb-8">
+                     {/* 1. JUDUL DITARUH DI LUAR GAMBAR (DI ATAS) */}
+                     <div className="mb-3 px-1">
+                        <span className="text-[10px] font-bold bg-red-600 text-white px-2 py-1 rounded mr-2 align-middle shadow-lg shadow-red-500/20">HOT UPDATE</span>
+                        <h2 className="text-xl md:text-2xl font-black text-white leading-tight inline align-middle">{listData[0].title}</h2>
+                     </div>
+
+                     {/* 2. GAMBAR BANNER (TV LABEL DIHAPUS) */}
+                     <div onClick={() => loadDetail(listData[0].slug)} className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-slate-800 active:scale-95 transition-transform cursor-pointer">
+                        <img src={listData[0].img} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        
+                        {/* Status Label (Ep 12 / Sub Indo) */}
+                        <div className="absolute bottom-3 left-3">
+                           <span className="bg-blue-600 text-xs font-bold px-3 py-1 rounded-full text-white shadow border border-blue-400">
+                              {formatLabel(listData[0])}
+                           </span>
+                        </div>
+                     </div>
+                  </div>
                 )}
 
-                {/* Header Section List */}
                 <div className="flex justify-between items-center mb-4 px-1">
                    <h2 className="font-bold text-lg text-slate-200 flex items-center gap-2">
                      {view === 'genre_result' && <button onClick={()=>setView('genres')}><Icons.Back /></button>}
-                     {view === 'home' ? 'Update Terbaru' : 
-                      view === 'ongoing' ? 'Sedang Tayang' : 
-                      view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 
-                      'Hasil Pencarian'}
+                     {view === 'home' ? 'Update Terbaru' : view === 'ongoing' ? 'Sedang Tayang' : view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 'Hasil Pencarian'}
                    </h2>
                    {listData.length > 0 && (
-                     <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">
-                       Page {page}
-                     </div>
+                     <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">Page {page}</div>
                    )}
                 </div>
 
-                {/* Grid List Anime */}
+                {/* GRID LIST */}
                 {listData.length === 0 ? (
                    <p className="text-center text-slate-500 mt-10">Tidak ada anime ditemukan.</p>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {listData.map((item, i) => (
-                      <div key={i} onClick={() => loadDetail(item.slug)} className="relative group rounded-xl overflow-hidden bg-slate-800 shadow-md active:scale-95 transition-transform border border-slate-800/50">
-                        <div className="aspect-[3/4]">
+                      <div key={i} onClick={() => loadDetail(item.slug)} className="relative group rounded-xl overflow-hidden bg-slate-900 shadow-md active:scale-95 transition-transform border border-slate-800 cursor-pointer">
+                        {/* Image Container */}
+                        <div className="aspect-[3/4] relative">
                           <img src={item.img} className="w-full h-full object-cover" loading="lazy" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
-                          <div className="absolute top-2 right-2">
-                            <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded shadow">
-                              {item.type || 'TV'}
-                            </span>
-                          </div>
-                          <div className="absolute bottom-2 left-2 right-2 text-center">
-                            <span className="text-[10px] font-bold bg-white/10 text-white px-2 py-0.5 rounded backdrop-blur border border-white/10 block truncate">
-                              {item.episode || item.status}
+                          <div className="absolute bottom-2 right-2">
+                            <span className="text-[10px] font-bold bg-black/60 text-white px-2 py-0.5 rounded backdrop-blur border border-white/10 block truncate">
+                              {formatLabel(item)}
                             </span>
                           </div>
                         </div>
-                        <div className="p-2.5">
-                          <h3 className="text-xs font-bold leading-snug line-clamp-2 text-slate-300 group-hover:text-blue-400 transition-colors">{item.title}</h3>
+                        
+                        {/* 3. FIX TITLE WARNA: PAKSA BG GELAP & TEKS PUTIH */}
+                        <div className="p-3 bg-slate-900 h-[4.5rem] flex items-center">
+                          <h3 className="text-xs font-bold leading-snug line-clamp-2 text-white group-hover:text-blue-400 transition-colors">
+                            {item.title}
+                          </h3>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Pagination */}
+                {/* PAGINATION */}
                 {listData.length > 0 && (
                   <div className="flex justify-center gap-4 mt-8">
                     <button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="px-5 py-2 bg-slate-800 rounded-full text-xs font-bold disabled:opacity-50">← Prev</button>
@@ -280,7 +311,7 @@ export default function AnimeApp() {
                       {favorites.map((item, i) => (
                         <div key={i} onClick={() => loadDetail(item.slug)} className="bg-slate-800 rounded-xl overflow-hidden shadow border border-slate-700 active:scale-95 transition">
                            <div className="aspect-[16/9]"><img src={item.img} className="w-full h-full object-cover"/></div>
-                           <div className="p-3"><h3 className="text-xs font-bold line-clamp-2">{item.title}</h3></div>
+                           <div className="p-3"><h3 className="text-xs font-bold line-clamp-2 text-white">{item.title}</h3></div>
                         </div>
                       ))}
                    </div>
@@ -291,17 +322,17 @@ export default function AnimeApp() {
             {/* VIEW: DETAIL */}
             {view === 'detail' && animeDetail && (
               <div className="animate-fade-in pb-10">
-                <div className="relative h-56 -mt-6 -mx-3 mb-14 overflow-hidden">
-                   <img src={animeDetail.img} className="w-full h-full object-cover opacity-40 blur-md scale-110" />
+                <div className="relative h-64 -mt-6 -mx-3 mb-14 overflow-hidden">
+                   <img src={animeDetail.img} className="w-full h-full object-cover opacity-30 blur-md scale-110" />
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#020617]"></div>
                    <button onClick={() => setView('home')} className="absolute top-4 left-4 bg-black/40 p-2 rounded-full backdrop-blur text-white z-10"><Icons.Back /></button>
                    
                    <div className="absolute -bottom-10 left-4 right-4 flex gap-4 items-end z-20">
                       <img src={animeDetail.img} className="w-28 rounded-lg shadow-2xl border-2 border-slate-700 bg-slate-800" />
                       <div className="flex-1 pb-1">
-                         <h1 className="text-lg font-black leading-tight line-clamp-2 mb-2 text-white shadow-black drop-shadow-md">{animeDetail.title}</h1>
+                         <h1 className="text-lg font-black leading-tight line-clamp-3 mb-2 text-white shadow-black drop-shadow-md">{animeDetail.title}</h1>
                          <div className="flex flex-wrap gap-2 text-[10px] font-bold text-slate-300">
-                            <span className="bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">★ {animeDetail.rating}</span>
+                            <span className="bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">★ {animeDetail.rating || '-'}</span>
                             <span className="bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">{animeDetail.status}</span>
                          </div>
                       </div>
@@ -311,8 +342,7 @@ export default function AnimeApp() {
                 <div className="flex gap-3 px-1 mb-6 mt-6">
                    <button onClick={() => animeDetail.episodes?.[0] && loadWatch(animeDetail.episodes[0].slug)} 
                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-3 rounded-xl font-bold text-sm text-white shadow-lg shadow-blue-500/20 active:scale-95 transition flex justify-center items-center gap-2">
-                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
-                     Mulai Nonton
+                     <Icons.Play /> Mulai Nonton
                    </button>
                    <button onClick={toggleFav} className={`px-4 py-3 rounded-xl border transition ${favorites.some(f=>f.title===animeDetail.title)?'border-red-500 bg-red-500/10 text-red-400':'border-slate-700 bg-slate-800 text-slate-400'}`}>
                      <Icons.Fav />
@@ -322,11 +352,18 @@ export default function AnimeApp() {
                 <div className="bg-slate-900/50 rounded-2xl p-4 border border-slate-800 mb-6">
                    <h3 className="font-bold text-xs text-slate-500 uppercase mb-2">Genre</h3>
                    <div className="flex flex-wrap gap-2 mb-4">
-                      {animeDetail.genres?.map((g:string) => (
-                        <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>
-                      ))}
+                      {animeDetail.genres && animeDetail.genres.length > 0 ? (
+                        animeDetail.genres.map((g:string) => (
+                          <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>
+                      )}
                    </div>
-                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">{animeDetail.synopsis}</p>
+                   <h3 className="font-bold text-xs text-slate-500 uppercase mb-1">Sinopsis</h3>
+                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">
+                     {animeDetail.synopsis ? animeDetail.synopsis : "Sinopsis belum tersedia untuk anime ini."}
+                   </p>
                 </div>
 
                 <div className="px-1">
@@ -336,7 +373,7 @@ export default function AnimeApp() {
                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1">
                       {animeDetail.episodes?.map((ep:any) => (
                          <button key={ep.slug} onClick={()=>loadWatch(ep.slug)} className="bg-slate-800 p-3 rounded-lg text-left border border-slate-700 active:bg-blue-600 active:border-blue-500 transition group">
-                            <div className="text-[11px] font-bold truncate text-slate-300 group-active:text-white">{ep.title.replace(animeDetail.title, '').trim() || ep.title}</div>
+                            <div className="text-[11px] font-bold truncate text-slate-300 group-active:text-white">{ep.title.replace(animeDetail.title, '').replace('Subtitle Indonesia','').trim() || ep.title}</div>
                             <div className="text-[9px] text-slate-500 mt-1 group-active:text-blue-200">{ep.date}</div>
                          </button>
                       ))}
@@ -345,7 +382,7 @@ export default function AnimeApp() {
               </div>
             )}
 
-            {/* VIEW: WATCH */}
+            {/* VIEW: WATCH (FIXED ERROR UI) */}
             {view === 'watch' && (
               <div className="fixed inset-0 bg-black z-[100] flex flex-col animate-fade-in">
                  <div className="absolute top-0 left-0 right-0 p-4 z-10 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start pointer-events-none">
@@ -353,7 +390,7 @@ export default function AnimeApp() {
                  </div>
 
                  <div className="flex-1 flex items-center justify-center bg-black relative">
-                    {streamData ? (
+                    {playerMode === 'native' && streamData ? (
                        <video 
                          ref={videoRef}
                          src={nativeSrc || streamData[0].url} 
@@ -363,27 +400,41 @@ export default function AnimeApp() {
                          className="w-full max-h-screen aspect-video shadow-2xl"
                          poster={watchData?.title ? undefined : animeDetail?.img} 
                        />
+                    ) : playerMode === 'iframe' && watchData?.servers ? (
+                        <iframe 
+                          src={watchData.servers[0].embed} 
+                          className="w-full h-full" 
+                          allowFullScreen 
+                          allow="autoplay; encrypted-media"
+                        ></iframe>
                     ) : (
-                       <div className="text-center p-6 space-y-4">
-                          <div className="text-4xl animate-bounce">📥</div>
-                          <p className="text-slate-400 text-sm">Streaming langsung belum tersedia.</p>
-                          {watchData?.downloads && (
-                             <div className="flex flex-wrap justify-center gap-2 mt-4">
-                               {watchData.downloads.map((dl:any, i:number) => (
-                                 <a key={i} href={dl.url} target="_blank" className="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-blue-700">
-                                   Download {dl.quality}
-                                 </a>
-                               ))}
-                             </div>
-                          )}
+                       // 4. FIX TAMPILAN ERROR (HAPUS DOWNLOAD BUTTON JELEK)
+                       <div className="text-center p-8 space-y-4 max-w-sm bg-[#1e293b] rounded-2xl border border-slate-700 mx-4">
+                          <div className="text-4xl">📡</div>
+                          <h3 className="text-white font-bold">Mode Bebas Iklan Tidak Tersedia</h3>
+                          <p className="text-slate-400 text-xs leading-relaxed">Server langsung (MP4) sedang sibuk atau tidak tersedia untuk episode ini.</p>
+                          <button 
+                             onClick={() => setPlayerMode('iframe')}
+                             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20"
+                          >
+                             Pindah ke Server Utama (Iframe)
+                          </button>
                        </div>
                     )}
                  </div>
 
-                 {streamData && (
-                    <div className="bg-[#0f172a] p-4 pb-safe border-t border-slate-800">
-                       <h3 className="text-xs font-bold text-slate-500 mb-3 uppercase">Pilih Kualitas (Bebas Iklan)</h3>
-                       <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                 {/* CONTROLS */}
+                 <div className="bg-[#0f172a] p-4 pb-safe border-t border-slate-800">
+                    <div className="flex justify-between items-center mb-3">
+                       <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sumber Video</h3>
+                       <div className="flex gap-2 bg-slate-900 p-1 rounded-lg">
+                          <button onClick={() => setPlayerMode('native')} className={`text-[10px] px-3 py-1 rounded font-bold transition ${playerMode==='native'?'bg-blue-600 text-white shadow':'text-slate-500 hover:text-white'}`}>No-Ads</button>
+                          <button onClick={() => setPlayerMode('iframe')} className={`text-[10px] px-3 py-1 rounded font-bold transition ${playerMode==='iframe'?'bg-blue-600 text-white shadow':'text-slate-500 hover:text-white'}`}>Server Utama</button>
+                       </div>
+                    </div>
+
+                    {playerMode === 'native' && streamData && (
+                       <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
                           {streamData.map((s:any, i:number) => (
                              <button key={i} onClick={()=>{ setNativeSrc(s.url); if(videoRef.current){videoRef.current.load(); videoRef.current.play();} }}
                                className={`px-4 py-2 rounded-lg text-xs font-bold border whitespace-nowrap ${nativeSrc === s.url ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
@@ -391,13 +442,14 @@ export default function AnimeApp() {
                              </button>
                           ))}
                        </div>
-                       {watchData?.next && (
-                          <button onClick={()=>loadWatch(watchData.next)} className="w-full mt-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-bold text-sm shadow-lg">
-                             Lanjut Episode Berikutnya →
-                          </button>
-                       )}
-                    </div>
-                 )}
+                    )}
+                    
+                    {watchData?.next && (
+                       <button onClick={()=>loadWatch(watchData.next)} className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white py-3 rounded-xl font-bold text-sm shadow-lg">
+                          Lanjut Episode Berikutnya →
+                       </button>
+                    )}
+                 </div>
               </div>
             )}
           </>
