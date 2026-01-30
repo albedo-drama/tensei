@@ -10,12 +10,17 @@ const cleanData = (arr: any[]) => {
   return arr.filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i);
 };
 
-// FORMAT LABEL SIMPLE: Cuma ambil angka episode
-const getEpisodeLabel = (item: any) => {
+// FORMAT LABEL (Untuk menampilkan Episode/Status)
+const formatLabel = (item: any) => {
+  // Cek jika ada info episode spesifik
   if (item.episode && item.episode.toLowerCase().includes('episode')) {
     return item.episode.replace('Subtitle Indonesia', '').trim();
   }
-  return item.episode || item.status || '';
+  // Jika statusnya Completed, anggap Full Episode
+  if (item.status === 'Completed') return 'Full Episode (Tamat)';
+  
+  // Fallback
+  return item.status || item.type || 'Ongoing';
 };
 
 // --- COMPONENTS: LOADING ---
@@ -31,7 +36,7 @@ const SuperLoader = () => (
 // --- ICONS ---
 const Icons = {
   Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H-2a2 2 0 01-2-2v-2z" /></svg>,
+  Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H-2a2 2 0 01-2-2v-2z" /></svg>,
   Search: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Fav: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>,
   Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
@@ -199,21 +204,30 @@ export default function AnimeApp() {
 
             {(['home', 'ongoing', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
               <>
-                {/* HERO BANNER - POLOS TANPA LABEL */}
-                {view === 'home' && !searchQuery && page === 1 && listData.length > 0 && (
+                {/* --- UNIVERSAL BANNER --- */}
+                {/* Banner ini sekarang muncul di SEMUA LIST view (Home, Ongoing, Search, Genre) */}
+                {listData.length > 0 && (
                   <div className="mb-8 cursor-pointer" onClick={() => loadDetail(listData[0].slug)}>
                      <div className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-slate-800 active:scale-95 transition-transform">
                         <img src={listData[0].img} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                        <div className="absolute bottom-4 left-4 right-4">
-                           <h2 className="text-xl md:text-2xl font-black text-white leading-tight mb-1">{listData[0].title}</h2>
-                           {/* HANYA MENAMPILKAN NOMOR EPISODE */}
-                           <p className="text-sm font-bold text-blue-400">{formatLabel(listData[0])}</p>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                        
+                        {/* Judul & Info di Tengah Bawah Banner */}
+                        <div className="absolute bottom-0 left-0 right-0 p-5 text-center flex flex-col items-center justify-end h-full">
+                           <h2 className="text-xl md:text-3xl font-black text-white leading-tight mb-2 drop-shadow-md line-clamp-2">
+                             {listData[0].title}
+                           </h2>
+                           <div className="bg-blue-600/90 backdrop-blur-sm px-4 py-1 rounded-full border border-blue-400/50 shadow-lg">
+                             <p className="text-xs md:text-sm font-bold text-white tracking-wide">
+                               {formatLabel(listData[0])}
+                             </p>
+                           </div>
                         </div>
                      </div>
                   </div>
                 )}
 
+                {/* Header Section */}
                 <div className="flex justify-between items-center mb-4 px-1">
                    <h2 className="font-bold text-lg text-slate-200 flex items-center gap-2">
                      {view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 
@@ -230,12 +244,12 @@ export default function AnimeApp() {
                    <p className="text-center text-slate-500 mt-10">Tidak ada anime ditemukan.</p>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {/* LIST MULAI DARI INDEX 0 (Termasuk yang di Banner, biar lengkap) */}
                     {listData.map((item, i) => (
                       <div key={i} onClick={() => loadDetail(item.slug)} className="relative group rounded-xl overflow-hidden bg-slate-900 shadow-md active:scale-95 transition-transform border border-slate-800 cursor-pointer">
                         <div className="aspect-[3/4] relative">
                           <img src={item.img} className="w-full h-full object-cover" loading="lazy" />
                         </div>
-                        {/* TAMPILAN LIST: JUDUL & EPISODE */}
                         <div className="p-3 bg-slate-900 h-[5.5rem] flex flex-col justify-center">
                           <h3 className="text-xs font-bold leading-snug line-clamp-2 text-white mb-1 group-hover:text-blue-400 transition-colors">
                             {item.title}
@@ -273,7 +287,6 @@ export default function AnimeApp() {
               </div>
             )}
 
-            {/* VIEW: DETAIL (Minimalis: Judul & Episode Range) */}
             {view === 'detail' && animeDetail && (
               <div className="animate-fade-in pb-10">
                 <div className="flex flex-col items-center pt-4 mb-6">
