@@ -10,42 +10,30 @@ const cleanData = (arr: any[]) => {
   return arr.filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i);
 };
 
+// FORMAT LABEL BARU: Hapus "Sub" yang tidak berguna
 const formatLabel = (item: any) => {
-  if (item.episode) {
-    // Ubah "Episode 12" jadi "Ep 12" biar singkat
+  if (item.episode && item.episode.toLowerCase().includes('episode')) {
     return item.episode.replace('Episode', 'Ep').replace('Subtitle Indonesia', '').trim();
   }
-  return item.status || 'Sub Indo';
+  // Kalau isinya cuma "Sub" atau kosong, mending tampilkan status atau type
+  if (item.status && item.status !== 'Sub') return item.status;
+  return item.type || 'TV'; 
 };
 
-// --- COMPONENTS: LOADING KEREN ---
-const SuperLoader = () => {
-  const [text, setText] = useState("Memanggil Waifu...");
-  useEffect(() => {
-    const texts = ["Memanggil Waifu...", "Menyiapkan Isekai...", "Loading Anime...", "Sabar ya..."];
-    let i = 0;
-    const interval = setInterval(() => {
-      i = (i + 1) % texts.length;
-      setText(texts[i]);
-    }, 800);
-    return () => clearInterval(interval);
-  }, []);
-
+// --- COMPONENTS: LOADING ---
+const SuperLoader = ({ text = "Memanggil Waifu..." }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
-      <div className="relative w-20 h-20 mb-6">
+    <div className="flex flex-col items-center justify-center min-h-[50vh] animate-fade-in">
+      <div className="relative w-16 h-16 mb-4">
         <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
         <div className="absolute inset-0 border-4 border-t-blue-500 border-r-purple-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-           <span className="text-2xl">⚡</span>
-        </div>
       </div>
-      <p className="text-sm font-bold text-slate-400 animate-pulse tracking-widest uppercase">{text}</p>
+      <p className="text-xs font-bold text-slate-400 animate-pulse tracking-widest uppercase">{text}</p>
     </div>
   );
 };
 
-// --- ICONS (SVG) ---
+// --- ICONS ---
 const Icons = {
   Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
@@ -53,42 +41,34 @@ const Icons = {
   Fav: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>,
   Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
   Ongoing: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Movie: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" /></svg>,
+  Complete: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   Play: () => <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
 };
 
 export default function AnimeApp() {
-  // --- STATE ---
-  const [view, setView] = useState<'home' | 'ongoing' | 'genres' | 'genre_result' | 'search' | 'favorites' | 'detail' | 'watch'>('home');
+  const [view, setView] = useState<'home' | 'ongoing' | 'completed' | 'movie' | 'genres' | 'genre_result' | 'search' | 'favorites' | 'detail' | 'watch'>('home');
   const [loading, setLoading] = useState(false);
-  
-  // Data
   const [listData, setListData] = useState<any[]>([]);
   const [animeDetail, setAnimeDetail] = useState<any>(null);
   const [watchData, setWatchData] = useState<any>(null);
   const [streamData, setStreamData] = useState<any>(null);
   const [genres, setGenres] = useState<any[]>([]);
-  
-  // User Data
   const [favorites, setFavorites] = useState<any[]>([]);
-  
-  // UI Controls
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState({ name: '', slug: '' });
   const [nativeSrc, setNativeSrc] = useState('');
-  const [playerMode, setPlayerMode] = useState<'iframe' | 'native'>('iframe');
+  const [playerMode, setPlayerMode] = useState<'iframe' | 'native'>('native');
+  const [playerLoading, setPlayerLoading] = useState(false); // New state for player switching
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // --- INIT ---
   useEffect(() => {
     const savedFav = localStorage.getItem('favorites');
     if (savedFav) setFavorites(JSON.parse(savedFav));
-    
-    // Fetch Genres
     fetch(`${API_BASE}/genres`).then(r => r.json()).then(j => setGenres(j.data)).catch(console.error);
   }, []);
 
-  // --- FETCHING ---
   const fetchList = async (endpoint: string) => {
     setLoading(true);
     try {
@@ -116,7 +96,8 @@ export default function AnimeApp() {
     setWatchData(null);
     setStreamData(null);
     setNativeSrc('');
-    setPlayerMode('native'); 
+    setPlayerMode('native');
+    setPlayerLoading(true); // Mulai loading player
     
     try {
       const resWatch = await fetch(`${API_BASE}/watch/${slug}`);
@@ -129,8 +110,17 @@ export default function AnimeApp() {
       if (jsonStream.code === 0 && jsonStream.data?.length > 0) {
         setStreamData(jsonStream.data);
         setNativeSrc(jsonStream.data[0].url);
+        setPlayerMode('native'); // Sukses Native
+      } else {
+        // AUTO SWITCH: Jika native gagal, langsung ke iframe tanpa tanya user
+        console.log("Stream native kosong, switch ke iframe...");
+        setPlayerMode('iframe'); 
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e);
+        setPlayerMode('iframe'); // Error pun langsung switch
+    }
+    setPlayerLoading(false);
   };
 
   const toggleFav = () => {
@@ -150,16 +140,16 @@ export default function AnimeApp() {
     setView('genre_result');
   };
 
-  // --- EFFECTS ---
   useEffect(() => {
     window.scrollTo(0, 0);
     if (view === 'home') fetchList(`/anime?page=${page}&order=update`);
     if (view === 'ongoing') fetchList(`/ongoing?page=${page}`);
+    if (view === 'completed') fetchList(`/anime?status=Completed&page=${page}&order=update`);
+    if (view === 'movie') fetchList(`/anime?type=Movie&page=${page}&order=update`);
     if (view === 'search' && searchQuery) fetchList(`/search?q=${searchQuery}`);
     if (view === 'genre_result') fetchList(`/anime?genre=${selectedGenre.slug}&page=${page}&order=update`);
   }, [view, page, selectedGenre]);
 
-  // --- HEADER COMPONENT ---
   const MobileHeader = () => (
     <div className="fixed top-0 left-0 right-0 h-14 bg-[#0f172a]/95 backdrop-blur z-40 flex items-center justify-between px-4 border-b border-slate-800 shadow-md">
        <h1 className="text-lg font-black italic bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -173,21 +163,25 @@ export default function AnimeApp() {
     </div>
   );
 
-  // --- BOTTOM NAV COMPONENT ---
   const BottomNav = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a] border-t border-slate-800 pb-safe z-50 flex justify-around items-center h-16 shadow-[0_-5px_15px_rgba(0,0,0,0.3)]">
-      <button onClick={() => { setView('home'); setPage(1); }} className={`flex flex-col items-center gap-1 ${view === 'home' ? 'text-blue-500' : 'text-slate-500'}`}>
-        <Icons.Home /> <span className="text-[10px] font-bold">Home</span>
-      </button>
-      <button onClick={() => { setView('ongoing'); setPage(1); }} className={`flex flex-col items-center gap-1 ${view === 'ongoing' ? 'text-blue-500' : 'text-slate-500'}`}>
-        <Icons.Ongoing /> <span className="text-[10px] font-bold">Ongoing</span>
-      </button>
-      <button onClick={() => setView('genres')} className={`flex flex-col items-center gap-1 ${(view === 'genres' || view === 'genre_result') ? 'text-blue-500' : 'text-slate-500'}`}>
-        <Icons.Genre /> <span className="text-[10px] font-bold">Genre</span>
-      </button>
-      <button onClick={() => setView('favorites')} className={`flex flex-col items-center gap-1 ${view === 'favorites' ? 'text-blue-500' : 'text-slate-500'}`}>
-        <Icons.Fav /> <span className="text-[10px] font-bold">Favorit</span>
-      </button>
+    <div className="fixed bottom-0 left-0 right-0 bg-[#0f172a] border-t border-slate-800 pb-safe z-50 flex items-center h-16 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] overflow-x-auto no-scrollbar">
+      <div className="flex w-full justify-between min-w-[360px] px-2">
+        <button onClick={() => { setView('home'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'home' ? 'text-blue-500' : 'text-slate-500'}`}>
+          <Icons.Home /> <span className="text-[10px] font-bold">Home</span>
+        </button>
+        <button onClick={() => { setView('ongoing'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'ongoing' ? 'text-blue-500' : 'text-slate-500'}`}>
+          <Icons.Ongoing /> <span className="text-[10px] font-bold">Ongoing</span>
+        </button>
+        <button onClick={() => { setView('completed'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'completed' ? 'text-blue-500' : 'text-slate-500'}`}>
+          <Icons.Complete /> <span className="text-[10px] font-bold">Tamat</span>
+        </button>
+        <button onClick={() => { setView('movie'); setPage(1); }} className={`flex flex-col items-center gap-1 min-w-[60px] ${view === 'movie' ? 'text-blue-500' : 'text-slate-500'}`}>
+          <Icons.Movie /> <span className="text-[10px] font-bold">Movie</span>
+        </button>
+        <button onClick={() => setView('genres')} className={`flex flex-col items-center gap-1 min-w-[60px] ${(view === 'genres' || view === 'genre_result') ? 'text-blue-500' : 'text-slate-500'}`}>
+          <Icons.Genre /> <span className="text-[10px] font-bold">Genre</span>
+        </button>
+      </div>
     </div>
   );
 
@@ -195,7 +189,6 @@ export default function AnimeApp() {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans pb-20 pt-16 selection:bg-blue-500 selection:text-white">
       <MobileHeader />
 
-      {/* SEARCH INPUT */}
       {view === 'search' && (
         <div className="container mx-auto px-4 mb-4">
           <form onSubmit={(e) => { e.preventDefault(); fetchList(`/search?q=${searchQuery}`); }} className="relative">
@@ -206,13 +199,11 @@ export default function AnimeApp() {
         </div>
       )}
 
-      {/* MAIN CONTENT */}
       <main className="container mx-auto px-3">
         {loading ? (
           <SuperLoader />
         ) : (
           <>
-            {/* VIEW: GENRE MENU */}
             {view === 'genres' && (
               <div className="animate-fade-in">
                 <h2 className="text-xl font-bold mb-4 px-1">Pilih Genre</h2>
@@ -227,24 +218,17 @@ export default function AnimeApp() {
               </div>
             )}
 
-            {/* VIEW: LIST (Home, Ongoing, Search, Genre Result) */}
-            {(['home', 'ongoing', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
+            {(['home', 'ongoing', 'completed', 'movie', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
               <>
-                {/* HERO BANNER - JUDUL DI ATAS GAMBAR SEKARANG */}
                 {view === 'home' && !searchQuery && page === 1 && listData.length > 0 && (
                   <div className="mb-8">
-                     {/* 1. JUDUL DITARUH DI LUAR GAMBAR (DI ATAS) */}
                      <div className="mb-3 px-1">
                         <span className="text-[10px] font-bold bg-red-600 text-white px-2 py-1 rounded mr-2 align-middle shadow-lg shadow-red-500/20">HOT UPDATE</span>
                         <h2 className="text-xl md:text-2xl font-black text-white leading-tight inline align-middle">{listData[0].title}</h2>
                      </div>
-
-                     {/* 2. GAMBAR BANNER (TV LABEL DIHAPUS) */}
                      <div onClick={() => loadDetail(listData[0].slug)} className="relative rounded-2xl overflow-hidden aspect-video shadow-2xl border border-slate-800 active:scale-95 transition-transform cursor-pointer">
                         <img src={listData[0].img} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                        
-                        {/* Status Label (Ep 12 / Sub Indo) */}
                         <div className="absolute bottom-3 left-3">
                            <span className="bg-blue-600 text-xs font-bold px-3 py-1 rounded-full text-white shadow border border-blue-400">
                               {formatLabel(listData[0])}
@@ -257,21 +241,17 @@ export default function AnimeApp() {
                 <div className="flex justify-between items-center mb-4 px-1">
                    <h2 className="font-bold text-lg text-slate-200 flex items-center gap-2">
                      {view === 'genre_result' && <button onClick={()=>setView('genres')}><Icons.Back /></button>}
-                     {view === 'home' ? 'Update Terbaru' : view === 'ongoing' ? 'Sedang Tayang' : view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 'Hasil Pencarian'}
+                     {view === 'home' ? 'Update Terbaru' : view === 'ongoing' ? 'Sedang Tayang' : view === 'completed' ? 'Anime Tamat' : view === 'movie' ? 'Film Anime' : view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 'Hasil Pencarian'}
                    </h2>
-                   {listData.length > 0 && (
-                     <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">Page {page}</div>
-                   )}
+                   {listData.length > 0 && <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">Page {page}</div>}
                 </div>
 
-                {/* GRID LIST */}
                 {listData.length === 0 ? (
                    <p className="text-center text-slate-500 mt-10">Tidak ada anime ditemukan.</p>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {listData.map((item, i) => (
                       <div key={i} onClick={() => loadDetail(item.slug)} className="relative group rounded-xl overflow-hidden bg-slate-900 shadow-md active:scale-95 transition-transform border border-slate-800 cursor-pointer">
-                        {/* Image Container */}
                         <div className="aspect-[3/4] relative">
                           <img src={item.img} className="w-full h-full object-cover" loading="lazy" />
                           <div className="absolute bottom-2 right-2">
@@ -280,8 +260,6 @@ export default function AnimeApp() {
                             </span>
                           </div>
                         </div>
-                        
-                        {/* 3. FIX TITLE WARNA: PAKSA BG GELAP & TEKS PUTIH */}
                         <div className="p-3 bg-slate-900 h-[4.5rem] flex items-center">
                           <h3 className="text-xs font-bold leading-snug line-clamp-2 text-white group-hover:text-blue-400 transition-colors">
                             {item.title}
@@ -292,7 +270,6 @@ export default function AnimeApp() {
                   </div>
                 )}
 
-                {/* PAGINATION */}
                 {listData.length > 0 && (
                   <div className="flex justify-center gap-4 mt-8">
                     <button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="px-5 py-2 bg-slate-800 rounded-full text-xs font-bold disabled:opacity-50">← Prev</button>
@@ -302,7 +279,6 @@ export default function AnimeApp() {
               </>
             )}
 
-            {/* VIEW: FAVORITES */}
             {view === 'favorites' && (
               <div className="px-2 animate-fade-in">
                  <h2 className="font-bold text-lg mb-4">Koleksi Favorit</h2>
@@ -319,14 +295,12 @@ export default function AnimeApp() {
               </div>
             )}
 
-            {/* VIEW: DETAIL */}
             {view === 'detail' && animeDetail && (
               <div className="animate-fade-in pb-10">
                 <div className="relative h-64 -mt-6 -mx-3 mb-14 overflow-hidden">
                    <img src={animeDetail.img} className="w-full h-full object-cover opacity-30 blur-md scale-110" />
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#020617]"></div>
                    <button onClick={() => setView('home')} className="absolute top-4 left-4 bg-black/40 p-2 rounded-full backdrop-blur text-white z-10"><Icons.Back /></button>
-                   
                    <div className="absolute -bottom-10 left-4 right-4 flex gap-4 items-end z-20">
                       <img src={animeDetail.img} className="w-28 rounded-lg shadow-2xl border-2 border-slate-700 bg-slate-800" />
                       <div className="flex-1 pb-1">
@@ -353,17 +327,11 @@ export default function AnimeApp() {
                    <h3 className="font-bold text-xs text-slate-500 uppercase mb-2">Genre</h3>
                    <div className="flex flex-wrap gap-2 mb-4">
                       {animeDetail.genres && animeDetail.genres.length > 0 ? (
-                        animeDetail.genres.map((g:string) => (
-                          <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>
-                        ))
-                      ) : (
-                        <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>
-                      )}
+                        animeDetail.genres.map((g:string) => <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>)
+                      ) : <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>}
                    </div>
                    <h3 className="font-bold text-xs text-slate-500 uppercase mb-1">Sinopsis</h3>
-                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">
-                     {animeDetail.synopsis ? animeDetail.synopsis : "Sinopsis belum tersedia untuk anime ini."}
-                   </p>
+                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">{animeDetail.synopsis || "Sinopsis belum tersedia."}</p>
                 </div>
 
                 <div className="px-1">
@@ -382,7 +350,6 @@ export default function AnimeApp() {
               </div>
             )}
 
-            {/* VIEW: WATCH (FIXED ERROR UI) */}
             {view === 'watch' && (
               <div className="fixed inset-0 bg-black z-[100] flex flex-col animate-fade-in">
                  <div className="absolute top-0 left-0 right-0 p-4 z-10 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-start pointer-events-none">
@@ -390,40 +357,20 @@ export default function AnimeApp() {
                  </div>
 
                  <div className="flex-1 flex items-center justify-center bg-black relative">
-                    {playerMode === 'native' && streamData ? (
-                       <video 
-                         ref={videoRef}
-                         src={nativeSrc || streamData[0].url} 
-                         controls 
-                         autoPlay 
-                         playsInline 
-                         className="w-full max-h-screen aspect-video shadow-2xl"
-                         poster={watchData?.title ? undefined : animeDetail?.img} 
-                       />
+                    {playerLoading ? (
+                       <SuperLoader text="Memuat Video..." />
+                    ) : playerMode === 'native' && streamData ? (
+                       <video ref={videoRef} src={nativeSrc || streamData[0].url} controls autoPlay playsInline className="w-full max-h-screen aspect-video shadow-2xl" poster={watchData?.title ? undefined : animeDetail?.img} />
                     ) : playerMode === 'iframe' && watchData?.servers ? (
-                        <iframe 
-                          src={watchData.servers[0].embed} 
-                          className="w-full h-full" 
-                          allowFullScreen 
-                          allow="autoplay; encrypted-media"
-                        ></iframe>
+                        <iframe src={watchData.servers[0].embed} className="w-full h-full" allowFullScreen allow="autoplay; encrypted-media"></iframe>
                     ) : (
-                       // 4. FIX TAMPILAN ERROR (HAPUS DOWNLOAD BUTTON JELEK)
                        <div className="text-center p-8 space-y-4 max-w-sm bg-[#1e293b] rounded-2xl border border-slate-700 mx-4">
-                          <div className="text-4xl">📡</div>
-                          <h3 className="text-white font-bold">Mode Bebas Iklan Tidak Tersedia</h3>
-                          <p className="text-slate-400 text-xs leading-relaxed">Server langsung (MP4) sedang sibuk atau tidak tersedia untuk episode ini.</p>
-                          <button 
-                             onClick={() => setPlayerMode('iframe')}
-                             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20"
-                          >
-                             Pindah ke Server Utama (Iframe)
-                          </button>
+                          <h3 className="text-white font-bold">Video Tidak Tersedia</h3>
+                          <p className="text-slate-400 text-xs">Maaf, sumber video untuk episode ini sedang bermasalah.</p>
                        </div>
                     )}
                  </div>
 
-                 {/* CONTROLS */}
                  <div className="bg-[#0f172a] p-4 pb-safe border-t border-slate-800">
                     <div className="flex justify-between items-center mb-3">
                        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sumber Video</h3>
@@ -455,7 +402,6 @@ export default function AnimeApp() {
           </>
         )}
       </main>
-
       {view !== 'watch' && <BottomNav />}
     </div>
   );
