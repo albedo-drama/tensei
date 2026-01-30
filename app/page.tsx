@@ -10,18 +10,13 @@ const cleanData = (arr: any[]) => {
   return arr.filter((v, i, a) => a.findIndex(t => t.slug === v.slug) === i);
 };
 
-// FORMAT LABEL (Prioritas Episode Number)
+// FORMAT LABEL (Prioritas: Episode -> Status)
 const formatLabel = (item: any) => {
-  // Cek apakah ada data episode spesifik (dari API /home)
   if (item.episode && item.episode.toLowerCase().includes('episode')) {
     return item.episode.replace('Episode', 'Ep').replace('Subtitle Indonesia', '').trim();
   }
-  // Jika tidak ada, cek status (Ongoing/Completed)
-  if (item.status && item.status !== 'Sub') {
-    return item.status;
-  }
-  // Terakhir, tampilkan Type atau default
-  return item.type || 'Baru';
+  if (item.status && item.status !== 'Sub') return item.status;
+  return 'Baru';
 };
 
 // --- COMPONENTS: LOADING ---
@@ -34,10 +29,10 @@ const SuperLoader = () => (
   </div>
 );
 
-// --- ICONS (SVG) ---
+// --- ICONS ---
 const Icons = {
   Home: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z" /></svg>,
+  Genre: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   Search: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   Fav: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>,
   Back: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
@@ -46,11 +41,9 @@ const Icons = {
 };
 
 export default function AnimeApp() {
-  // State
   const [view, setView] = useState<'home' | 'ongoing' | 'genres' | 'genre_result' | 'search' | 'favorites' | 'detail' | 'watch'>('home');
   const [loading, setLoading] = useState(false);
   
-  // Data
   const [listData, setListData] = useState<any[]>([]);
   const [animeDetail, setAnimeDetail] = useState<any>(null);
   const [watchData, setWatchData] = useState<any>(null);
@@ -58,7 +51,6 @@ export default function AnimeApp() {
   const [genres, setGenres] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
   
-  // Controls
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState({ name: '', slug: '' });
@@ -66,14 +58,12 @@ export default function AnimeApp() {
   const [playerMode, setPlayerMode] = useState<'iframe' | 'native'>('native');
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Init
   useEffect(() => {
     const savedFav = localStorage.getItem('favorites');
     if (savedFav) setFavorites(JSON.parse(savedFav));
     fetch(`${API_BASE}/genres`).then(r => r.json()).then(j => setGenres(j.data)).catch(console.error);
   }, []);
 
-  // --- FETCHING ---
   const fetchList = async (endpoint: string) => {
     setLoading(true);
     try {
@@ -136,26 +126,27 @@ export default function AnimeApp() {
     setView('genre_result');
   };
 
-  // --- ROUTER LOGIC ---
   useEffect(() => {
     window.scrollTo(0, 0);
-    
-    // HOME: Pake /home (Tanpa Page) agar data Episode muncul
     if (view === 'home') fetchList(`/home`);
-    
-    // OTHER: Pake /ongoing atau /anime agar Pagination jalan
     if (view === 'ongoing') fetchList(`/ongoing?page=${page}`);
     if (view === 'search' && searchQuery) fetchList(`/search?q=${searchQuery}`);
     if (view === 'genre_result') fetchList(`/anime?genre=${selectedGenre.slug}&page=${page}&order=update`);
   }, [view, page, selectedGenre]);
 
-  // --- COMPONENTS ---
   const MobileHeader = () => (
     <div className="fixed top-0 left-0 right-0 h-14 bg-[#0f172a]/95 backdrop-blur z-40 flex items-center justify-between px-4 border-b border-slate-800 shadow-md">
-       <h1 className="text-lg font-black italic bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-         ALBEDOWIBU-TV
-       </h1>
-       {view !== 'search' && (
+       <div className="flex items-center gap-3">
+         {/* Jika di detail/genre, tombol back di header. Jika di home, Logo */}
+         {(view === 'detail' || view === 'genre_result') ? (
+            <button onClick={() => setView('home')} className="text-white"><Icons.Back /></button>
+         ) : (
+            <h1 className="text-lg font-black italic bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              ALBEDOWIBU-TV
+            </h1>
+         )}
+       </div>
+       {view !== 'search' && view !== 'watch' && (
          <button onClick={() => setView('search')} className="text-slate-400">
            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
          </button>
@@ -182,7 +173,7 @@ export default function AnimeApp() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans pb-20 pt-16 selection:bg-blue-500 selection:text-white">
-      <MobileHeader />
+      {view !== 'watch' && <MobileHeader />}
 
       {view === 'search' && (
         <div className="container mx-auto px-4 mb-4">
@@ -215,7 +206,6 @@ export default function AnimeApp() {
 
             {(['home', 'ongoing', 'search', 'genre_result'].includes(view) && (listData.length > 0 || view === 'genre_result')) && (
               <>
-                {/* BANNER: Hanya di Home Page 1 */}
                 {view === 'home' && !searchQuery && page === 1 && listData.length > 0 && (
                   <div className="mb-8">
                      <div className="mb-3 px-1">
@@ -236,11 +226,12 @@ export default function AnimeApp() {
 
                 <div className="flex justify-between items-center mb-4 px-1">
                    <h2 className="font-bold text-lg text-slate-200 flex items-center gap-2">
-                     {view === 'genre_result' && <button onClick={()=>setView('genres')}><Icons.Back /></button>}
-                     {view === 'home' ? 'Update Terbaru' : view === 'ongoing' ? 'Sedang Tayang' : view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 'Hasil Pencarian'}
+                     {view === 'genre_result' ? `Genre: ${selectedGenre.name}` : 
+                      view === 'home' ? 'Update Terbaru' : 
+                      view === 'ongoing' ? 'Sedang Tayang' : 
+                      'Hasil Pencarian'}
                    </h2>
-                   {/* Tombol Page hanya muncul jika BUKAN Home */}
-                   {view !== 'home' && listData.length > 0 && <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">Page {page}</div>}
+                   {listData.length > 0 && view !== 'home' && <div className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">Page {page}</div>}
                 </div>
 
                 {listData.length === 0 ? (
@@ -252,7 +243,6 @@ export default function AnimeApp() {
                         <div className="aspect-[3/4] relative">
                           <img src={item.img} className="w-full h-full object-cover" loading="lazy" />
                           <div className="absolute bottom-2 right-2">
-                            {/* Label Episode yang Benar */}
                             <span className="text-[10px] font-bold bg-black/60 text-white px-2 py-0.5 rounded backdrop-blur border border-white/10 block truncate">
                               {formatLabel(item)}
                             </span>
@@ -268,18 +258,15 @@ export default function AnimeApp() {
                   </div>
                 )}
 
-                {/* PAGINATION: Tidak dimunculkan di Home, hanya di menu lain */}
-                {view !== 'home' && listData.length > 0 && (
+                {listData.length > 0 && view !== 'home' && (
                   <div className="flex justify-center gap-4 mt-8">
                     <button disabled={page===1} onClick={()=>setPage(p=>p-1)} className="px-5 py-2 bg-slate-800 rounded-full text-xs font-bold disabled:opacity-50">← Prev</button>
                     <button onClick={()=>setPage(p=>p+1)} className="px-5 py-2 bg-blue-600 rounded-full text-xs font-bold text-white shadow-lg shadow-blue-500/30">Next →</button>
                   </div>
                 )}
                 
-                {/* FOOTER KHUSUS HOME: Biar user tau ada menu lain */}
                 {view === 'home' && listData.length > 0 && (
                    <div className="mt-8 text-center">
-                      <p className="text-xs text-slate-500 mb-3">Ingin lihat lebih banyak?</p>
                       <button onClick={() => { setView('ongoing'); setPage(1); }} className="bg-slate-800 border border-slate-700 text-slate-300 px-6 py-3 rounded-xl text-xs font-bold w-full">
                          Lihat Semua (Ongoing)
                       </button>
@@ -304,55 +291,66 @@ export default function AnimeApp() {
               </div>
             )}
 
+            {/* VIEW: DETAIL (LAYOUT BARU: POSTER TENGAH & TIDAK KEPOTONG) */}
             {view === 'detail' && animeDetail && (
               <div className="animate-fade-in pb-10">
-                <div className="relative h-64 -mt-6 -mx-3 mb-16 overflow-hidden">
-                   <img src={animeDetail.img} className="w-full h-full object-cover opacity-30 blur-md scale-110" />
-                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#020617]"></div>
-                   <button onClick={() => setView('home')} className="absolute top-4 left-4 bg-black/40 p-2 rounded-full backdrop-blur text-white z-10"><Icons.Back /></button>
+                
+                {/* 1. BAGIAN ATAS: Poster & Judul Center */}
+                <div className="flex flex-col items-center pt-4 mb-6">
+                   {/* Poster Utuh (Tanpa Crop) */}
+                   <div className="w-48 rounded-xl shadow-2xl border-4 border-slate-800 overflow-hidden mb-6">
+                      <img src={animeDetail.img} className="w-full h-auto object-cover" />
+                   </div>
                    
-                   <div className="absolute -bottom-14 left-4 right-4 flex gap-4 items-end z-20">
-                      <img src={animeDetail.img} className="w-28 rounded-lg shadow-2xl border-2 border-slate-700 bg-slate-800" />
-                      <div className="flex-1 pb-2">
-                         <h1 className="text-lg font-black leading-snug line-clamp-3 mb-2 text-white shadow-black drop-shadow-md pb-1">{animeDetail.title}</h1>
-                         <div className="flex flex-wrap gap-2 text-[10px] font-bold text-slate-300">
-                            <span className="bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">★ {animeDetail.rating || '-'}</span>
-                            <span className="bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">{animeDetail.status}</span>
-                         </div>
-                      </div>
+                   {/* Judul Besar & Center */}
+                   <h1 className="text-2xl font-black text-center leading-tight mb-3 px-2 text-white">{animeDetail.title}</h1>
+                   
+                   {/* Info Rating & Status */}
+                   <div className="flex gap-2 text-xs font-bold text-slate-300">
+                      <span className="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full border border-yellow-500/30">★ {animeDetail.rating || '-'}</span>
+                      <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30">{animeDetail.status}</span>
                    </div>
                 </div>
 
-                <div className="flex gap-3 px-1 mb-6 mt-10">
+                {/* 2. TOMBOL AKSI */}
+                <div className="flex gap-3 px-1 mb-8">
                    <button onClick={() => animeDetail.episodes?.[0] && loadWatch(animeDetail.episodes[0].slug)} 
-                     className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-3 rounded-xl font-bold text-sm text-white shadow-lg shadow-blue-500/20 active:scale-95 transition flex justify-center items-center gap-2">
+                     className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 py-3.5 rounded-xl font-bold text-sm text-white shadow-lg shadow-blue-500/20 active:scale-95 transition flex justify-center items-center gap-2">
                      <Icons.Play /> Mulai Nonton
                    </button>
-                   <button onClick={toggleFav} className={`px-4 py-3 rounded-xl border transition ${favorites.some(f=>f.title===animeDetail.title)?'border-red-500 bg-red-500/10 text-red-400':'border-slate-700 bg-slate-800 text-slate-400'}`}>
+                   <button onClick={toggleFav} className={`px-5 py-3.5 rounded-xl border transition ${favorites.some(f=>f.title===animeDetail.title)?'border-red-500 bg-red-500/10 text-red-400':'border-slate-700 bg-slate-800 text-slate-400'}`}>
                      <Icons.Fav />
                    </button>
                 </div>
 
-                <div className="bg-slate-900/50 rounded-2xl p-4 border border-slate-800 mb-6">
-                   <h3 className="font-bold text-xs text-slate-500 uppercase mb-2">Genre</h3>
-                   <div className="flex flex-wrap gap-2 mb-4">
+                {/* 3. INFO & SINOPSIS */}
+                <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-800 mb-6">
+                   <h3 className="font-bold text-xs text-slate-500 uppercase mb-3">Genre</h3>
+                   <div className="flex flex-wrap gap-2 mb-5">
                       {animeDetail.genres && animeDetail.genres.length > 0 ? (
-                        animeDetail.genres.map((g:string) => <span key={g} className="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700">{g}</span>)
-                      ) : <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>}
+                        animeDetail.genres.map((g:string) => (
+                          <span key={g} className="text-[10px] bg-slate-800 px-3 py-1.5 rounded-full text-slate-300 border border-slate-700">{g}</span>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-slate-500 italic">Genre tidak tersedia</span>
+                      )}
                    </div>
-                   <h3 className="font-bold text-xs text-slate-500 uppercase mb-1">Sinopsis</h3>
-                   <p className="text-xs text-slate-400 leading-relaxed line-clamp-6">{animeDetail.synopsis || "Sinopsis belum tersedia."}</p>
+                   <h3 className="font-bold text-xs text-slate-500 uppercase mb-2">Sinopsis</h3>
+                   <p className="text-sm text-slate-300 leading-relaxed">
+                     {animeDetail.synopsis ? animeDetail.synopsis : "Sinopsis belum tersedia untuk anime ini."}
+                   </p>
                 </div>
 
+                {/* 4. DAFTAR EPISODE */}
                 <div className="px-1">
-                   <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
-                     <span className="w-1 h-4 bg-blue-500 rounded-full"></span> Daftar Episode
+                   <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+                     <span className="w-1.5 h-5 bg-blue-500 rounded-full"></span> Daftar Episode
                    </h3>
-                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1">
+                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
                       {animeDetail.episodes?.map((ep:any) => (
-                         <button key={ep.slug} onClick={()=>loadWatch(ep.slug)} className="bg-slate-800 p-3 rounded-lg text-left border border-slate-700 active:bg-blue-600 active:border-blue-500 transition group">
+                         <button key={ep.slug} onClick={()=>loadWatch(ep.slug)} className="bg-slate-800 p-3 rounded-xl text-left border border-slate-700 active:bg-blue-600 active:border-blue-500 transition group">
                             <div className="text-[11px] font-bold truncate text-slate-300 group-active:text-white">{ep.title.replace(animeDetail.title, '').replace('Subtitle Indonesia','').trim() || ep.title}</div>
-                            <div className="text-[9px] text-slate-500 mt-1 group-active:text-blue-200">{ep.date}</div>
+                            <div className="text-[10px] text-slate-500 mt-1 group-active:text-blue-200">{ep.date}</div>
                          </button>
                       ))}
                    </div>
